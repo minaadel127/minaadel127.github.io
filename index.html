@@ -1,20 +1,45 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>BMI Progress</title>
+  <title>Summary</title>
   <meta charset="utf-8">
 </head>
 <body>
 
-<h2>BMI Weekly Progress</h2>
+<h1>Summary</h1>
 
-<p>Updated automatically from measurements.</p>
+<label for="viewSelect">Choose view:</label>
+
+<select id="viewSelect" onchange="switchView()">
+  <option value="weekly">Weekly Summary</option>
+  <option value="monthly">Monthly Summary</option>
+</select>
+
+<div id="weeklyView">
+  <iframe
+    src="https://docs.google.com/spreadsheets/d/e/2PACX-1vS4Vm_bppZA_s-__FYi0BzWuV_dSp40B2S6zOszAt0cZ5hmFwlruyKSOjSTBtAiHjVO2fSMtGGQWNF5/pubchart?oid=1099546107&format=interactive"
+    width="100%"
+    height="450"
+    frameborder="0">
+  </iframe>
+</div>
+
+<div id="monthlyView" style="display:none;">
+  <iframe
+    src="https://docs.google.com/spreadsheets/d/e/2PACX-1vS4Vm_bppZA_s-__FYi0BzWuV_dSp40B2S6zOszAt0cZ5hmFwlruyKSOjSTBtAiHjVO2fSMtGGQWNF5/pubchart?oid=837033611&format=interactive"
+    width="100%"
+    height="450"
+    frameborder="0">
+  </iframe>
+</div>
+
+<script>
+function switchView() {
+  var selected = document.getElementById("viewSelect").value;
+  document.getElementById("weeklyView").style.display = selected === "weekly" ? "block" : "none";
+  document.getElementById("monthlyView").style.display = selected === "monthly" ? "block" : "none";
+}
+</script>
 
 </body>
 </html>
-<iframe
-  src="https://docs.google.com/spreadsheets/d/e/2PACX-1vS4Vm_bppZA_s-__FYi0BzWuV_dSp40B2S6zOszAt0cZ5hmFwlruyKSOjSTBtAiHjVO2fSMtGGQWNF5/pubchart?oid=1099546107&format=interactive"
-  width="100%"
-  height="450"
-  frameborder="0">
-</iframe>
