@@ -25,6 +25,28 @@
       border-radius: 8px;
       margin-top: 10px;
     }
+    .bmi-status {
+      font-weight: bold;
+      padding: 10px;
+      border-radius: 5px;
+      margin-top: 15px;
+      text-align: center;
+      font-size: 18px;
+      color: #fff;
+    }
+    .bmi-severe, .bmi-obese3 {
+      background-color: #dc3545;
+    }
+    .bmi-moderate, .bmi-obese2 {
+      background-color: #ffc107;
+      color: #212529;
+    }
+    .bmi-mild, .bmi-obese1 {
+      background-color: #fd7e14;
+    }
+    .bmi-normal {
+      background-color: #28a745;
+    }
   </style>
 </head>
 <body>
@@ -50,6 +72,7 @@
     height="260"
     frameborder="0">
   </iframe>
+  <div id="weeklyBmiStatus" class="bmi-status"></div>
 </div>
 
 <!-- Monthly Charts -->
@@ -64,14 +87,58 @@
     height="260"
     frameborder="0">
   </iframe>
+  <div id="monthlyBmiStatus" class="bmi-status"></div>
 </div>
 
 <script>
+// Dropdown logic
 function switchView() {
   var selected = document.getElementById("viewSelect").value;
   document.getElementById("weeklyView").style.display = selected === "weekly" ? "block" : "none";
   document.getElementById("monthlyView").style.display = selected === "monthly" ? "block" : "none";
 }
+
+// Example BMI values; replace with dynamic fetching if needed
+const weeklyBMI = 49.14;
+const monthlyBMI = 22.5;
+
+function getBmiClass(bmi) {
+  if (bmi < 16) return 'bmi-severe';
+  if (bmi >=16 && bmi < 17) return 'bmi-moderate';
+  if (bmi >=17 && bmi < 18.5) return 'bmi-mild';
+  if (bmi >=18.5 && bmi < 25) return 'bmi-normal';
+  if (bmi >=25 && bmi < 30) return 'bmi-moderate';
+  if (bmi >=30 && bmi < 35) return 'bmi-obese1';
+  if (bmi >=35 && bmi < 40) return 'bmi-obese2';
+  if (bmi >=40) return 'bmi-obese3';
+  return '';
+}
+
+function getBmiText(bmi) {
+  if (bmi < 16) return 'Severe Thinness';
+  if (bmi >=16 && bmi < 17) return 'Moderate Thinness';
+  if (bmi >=17 && bmi < 18.5) return 'Mild Thinness';
+  if (bmi >=18.5 && bmi < 25) return 'Normal';
+  if (bmi >=25 && bmi < 30) return 'Overweight';
+  if (bmi >=30 && bmi < 35) return 'Obese Class I';
+  if (bmi >=35 && bmi < 40) return 'Obese Class II';
+  if (bmi >=40) return 'Obese Class III';
+  return '';
+}
+
+// Update BMI display
+function updateBmiDisplay() {
+  const weeklyDiv = document.getElementById('weeklyBmiStatus');
+  weeklyDiv.className = 'bmi-status ' + getBmiClass(weeklyBMI);
+  weeklyDiv.innerText = `Weekly BMI: ${weeklyBMI.toFixed(1)} (${getBmiText(weeklyBMI)})`;
+
+  const monthlyDiv = document.getElementById('monthlyBmiStatus');
+  monthlyDiv.className = 'bmi-status ' + getBmiClass(monthlyBMI);
+  monthlyDiv.innerText = `Monthly BMI: ${monthlyBMI.toFixed(1)} (${getBmiText(monthlyBMI)})`;
+}
+
+// Initialize on page load
+updateBmiDisplay();
 </script>
 
 </body>
