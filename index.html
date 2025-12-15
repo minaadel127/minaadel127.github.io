@@ -1,104 +1,100 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Digital Scale Summary</title>
+  <title>Digital Scale Height Manager</title>
   <meta charset="utf-8">
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; max-width: 900px; margin: auto; text-align: center; }
-    h1 { text-align: center; }
-
-    .height-control { margin: 20px auto; font-size: 20px; }
-    .height-control button { font-size: 24px; padding: 5px 15px; margin: 0 10px; }
-    .height-display { font-weight: bold; font-size: 24px; display: inline-block; width: 60px; }
-
-    select { display: block; margin: 10px auto; padding: 6px 12px; font-size: 16px; }
-
-    table { width: 400px; margin: 20px auto; border-collapse: collapse; text-align: center; }
-    th, td { border: 1px solid #ccc; padding: 8px; }
-    th { background-color: #f2f2f2; }
-
-    canvas { display: block; margin: 20px auto; width: 600px !important; height: 350px !important; }
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: auto;
+      text-align: center;
+      padding: 20px;
+    }
+    h1 { margin-bottom: 30px; }
+    .height-display {
+      font-size: 36px;
+      margin: 20px 0;
+    }
+    button {
+      font-size: 24px;
+      width: 60px;
+      height: 60px;
+      margin: 10px;
+    }
+    #status {
+      margin-top: 20px;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
 
-<h1>Digital Scale Summary</h1>
+<h1>Set Your Height</h1>
 
-<!-- Height control -->
-<div class="height-control">
-  <button id="decreaseHeight">-</button>
-  <span id="heightDisplay">0</span> cm
-  <button id="increaseHeight">+</button>
-</div>
+<div class="height-display" id="heightDisplay">0 cm</div>
 
-<label for="viewSelect">Choose view:</label>
-<select id="viewSelect" onchange="switchView(true)">
-  <option value="weekly">Weekly Summary</option>
-  <option value="monthly">Monthly Summary</option>
-</select>
+<button onclick="changeHeight(-5)">-</button>
+<button onclick="changeHeight(5)">+</button>
 
-<div id="weeklyView">
-  <table id="weeklyTable"></table>
-  <canvas id="weeklyChart"></canvas>
-</div>
+<div id="status"></div>
 
-<div id="monthlyView" style="display:none;">
-  <table id="monthlyTable"></table>
-  <canvas id="monthlyChart"></canvas>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-const DOPOST_URL = "https://script.google.com/macros/s/AKfycbz7JZZ1ITWCGXrxhSCLOkD0n5j3J_ZXpJ_yyFgUKNCkN4DXSFTb3t_Cz7Kh0uS_TmuD9A/exec"; // your doPost URL
+  // ===== CONFIG =====
+  const HEIGHT_MIN = 0;
+  const HEIGHT_MAX = 50;
+  const HEIGHT_STEP = 5;
 
-// Initialize height
-let height = parseInt(localStorage.getItem('height') || 0);
-const heightDisplay = document.getElementById('heightDisplay');
-function updateHeightDisplay() {
-  heightDisplay.textContent = height;
-  localStorage.setItem('height', height);
-}
-updateHeightDisplay();
+  // ===== LOCAL STORAGE =====
+  let currentHeight = parseInt(localStorage.getItem("height") || 0);
 
-// Buttons
-document.getElementById('increaseHeight').onclick = () => {
-  if (height < 50) { height += 5; updateHeightDisplay(); }
-};
-document.getElementById('decreaseHeight').onclick = () => {
-  if (height > 0) { height -= 5; updateHeightDisplay(); }
-};
+  const heightDisplay = document.getElementById("heightDisplay");
+  const statusDiv = document.getElementById("status");
 
-// View switching
-function switchView(save=false){
-  const v = document.getElementById("viewSelect").value;
-  document.getElementById("weeklyView").style.display = v==="weekly"?"block":"none";
-  document.getElementById("monthlyView").style.display = v==="monthly"?"block":"none";
-  if(save) localStorage.setItem("lastView", v);
-}
-window.onload = () => {
-  const lastView = localStorage.getItem("lastView") || "weekly";
-  document.getElementById("viewSelect").value = lastView;
-  switchView();
-};
+  function updateDisplay() {
+    heightDisplay.innerText = currentHeight + " cm";
+    localStorage.setItem("height", currentHeight);
+  }
 
-// Function to upload weight + timestamp from scale
-function uploadWeight(timestamp, weight) {
-  fetch(DOPOST_URL, {
-    method: "POST",
-    body: JSON.stringify({
-      timestamp: timestamp,
-      weight_kg: weight,
-      height_cm: height // include height automatically
-    })
-  })
-  .then(r => r.json())
-  .then(res => console.log('Upload result:', res))
-  .catch(err => console.error('Upload error:', err));
-}
+  function changeHeight(delta) {
+    currentHeight += delta;
+    if(currentHeight < HEIGHT_MIN) currentHeight = HEIGHT_MIN;
+    if(currentHeight > HEIGHT_MAX) currentHeight = HEIGHT_MAX;
+    updateDisplay();
+  }
 
-// Example usage: call this function when the scale sends new data
-// uploadWeight("2025-12-15 12:34:56", 72.5);
+  // ===== SEND HEIGHT TO SHEET =====
+  function sendHeightToSheet() {
+    // Replace this with your height script deployment URL
+    const HEIGHT_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzgZdy4DPXDc7VQQDyjp3B6juji1V0VilcbD9W1aDoF3Wz85lHqM1DFf2ZJa2ozUWHdEA/exec";
 
+    fetch(HEIGHT_SCRIPT_URL + "?height=" + currentHeight)
+      .then(response => response.json())
+      .then(data => {
+        if(data.result === "success"){
+          statusDiv.innerText = "Height saved successfully.";
+          statusDiv.style.color = "green";
+        } else {
+          statusDiv.innerText = "Error saving height: " + data.message;
+          statusDiv.style.color = "red";
+        }
+      })
+      .catch(err => {
+        statusDiv.innerText = "Error connecting to server.";
+        statusDiv.style.color = "red";
+        console.error(err);
+      });
+  }
+
+  // ===== INIT =====
+  window.onload = () => {
+    updateDisplay();
+
+    // Optionally, automatically send height every few seconds
+    // or when a new weight reading is uploaded from the scale
+    // Example: sendHeightToSheet();
+  };
 </script>
+
 </body>
 </html>
