@@ -2,134 +2,75 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Digital Scale Summary</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <title>Digital Scale Test</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      max-width: 900px;
+      max-width: 700px;
       margin: 20px auto;
       padding: 20px;
     }
-
     h1 { text-align: center; }
-
     select {
       display: block;
       margin: 10px auto 20px auto;
       padding: 6px 12px;
       font-size: 16px;
     }
-
-    .bmi-status {
-      font-weight: bold;
-      padding: 10px;
-      border-radius: 5px;
-      margin-top: 15px;
-      text-align: center;
-      font-size: 18px;
-      color: #fff;
-    }
-
-    .bmi-severe, .bmi-obese3 { background-color: #dc3545; }
-    .bmi-moderate, .bmi-obese2 { background-color: #ffc107; color: #212529; }
-    .bmi-mild, .bmi-obese1 { background-color: #fd7e14; }
-    .bmi-normal { background-color: #28a745; }
-
     table {
-      width: 400px;
+      width: 60%;
       margin: 20px auto;
       border-collapse: collapse;
     }
-
     th, td {
       border: 1px solid #ccc;
       padding: 8px;
       text-align: center;
     }
-
     th { background-color: #f2f2f2; }
-
-    .chart-container {
-      width: 600px;
-      height: 400px;
-      margin: 20px auto;
-    }
-
-    canvas {
-      width: 100% !important;
-      height: 100% !important;
-    }
   </style>
 </head>
 <body>
 
-<h1>Digital Scale Summary</h1>
+<h1>Digital Scale Test</h1>
 
 <select id="viewSelect" onchange="switchView()">
-  <option value="weekly">Weekly Summary</option>
-  <option value="monthly">Monthly Summary</option>
+  <option value="weekly">Weekly</option>
+  <option value="monthly">Monthly</option>
 </select>
 
-<!-- Weekly -->
 <div id="weeklyView">
-  <div class="chart-container">
-    <canvas id="weeklyChartCanvas"></canvas>
-  </div>
-  <div id="weeklyBmiStatus" class="bmi-status"></div>
-  <table id="weeklyTable"></table>
+  <h2>Weekly Values</h2>
+  <table id="weeklyTable">
+    <tr><th>Type</th><th>Value</th></tr>
+  </table>
 </div>
 
-<!-- Monthly -->
 <div id="monthlyView" style="display:none;">
-  <div class="chart-container">
-    <canvas id="monthlyChartCanvas"></canvas>
-  </div>
-  <div id="monthlyBmiStatus" class="bmi-status"></div>
-  <table id="monthlyTable"></table>
+  <h2>Monthly Values</h2>
+  <table id="monthlyTable">
+    <tr><th>Type</th><th>Value</th></tr>
+  </table>
 </div>
 
 <script>
-/* ===== REPLACE WITH YOUR DEPLOYED WEB APP URLS ===== */
+/* ===== REPLACE THESE WITH YOUR WEB APP DEPLOYED URLs ===== */
 const WEEKLY_URL  = "https://script.google.com/macros/s/AKfycbxNXvy3xP98H4GoOsh_UW2YBceCWz9_sVY_fqQZME-n1eI_lBiOC0AzB4JtI6p_kUCkEw/exec";
-const MONTHLY_URL = "https://script.google.com/macros/s/AKfycbxahFOzwfP8QKsLcqWEsNq3FiD_rQthjw8x4JXNwU3zhwiUT1KYVomM9A2__Yb3hFwOCQ/exec";
+const MONTHLY_URL = "https://script.google.com/macros/s/AKfycbxj9kHBXyCopYVvdn6HVOutus2-IEx_dg5jE8APov65bN5Y0_k5ew72B942wOITBiAGPg/exec";
 
-/* ===== BMI LOGIC ===== */
-function getBmiClass(bmi) {
-  bmi = parseFloat(bmi);
-  if (bmi < 16) return 'bmi-severe';
-  if (bmi < 17) return 'bmi-moderate';
-  if (bmi < 18.5) return 'bmi-mild';
-  if (bmi < 25) return 'bmi-normal';
-  if (bmi < 30) return 'bmi-moderate';
-  if (bmi < 35) return 'bmi-obese1';
-  if (bmi < 40) return 'bmi-obese2';
-  return 'bmi-obese3';
+/* ===== SWITCH VIEW ===== */
+function switchView() {
+  const view = document.getElementById("viewSelect").value;
+  document.getElementById("weeklyView").style.display = view === 'weekly' ? 'block' : 'none';
+  document.getElementById("monthlyView").style.display = view === 'monthly' ? 'block' : 'none';
 }
 
-function getBmiText(bmi) {
-  bmi = parseFloat(bmi);
-  if (bmi < 16) return 'Severe Thinness';
-  if (bmi < 17) return 'Moderate Thinness';
-  if (bmi < 18.5) return 'Mild Thinness';
-  if (bmi < 25) return 'Normal';
-  if (bmi < 30) return 'Overweight';
-  if (bmi < 35) return 'Obese Class I';
-  if (bmi < 40) return 'Obese Class II';
-  return 'Obese Class III';
-}
-
-/* ===== CHART INSTANCES ===== */
-let weeklyChart, monthlyChart;
-
-/* ===== LOAD WEEKLY DATA ===== */
+/* ===== LOAD WEEKLY ===== */
 async function loadWeekly() {
   try {
     const res = await fetch(WEEKLY_URL);
     const data = await res.json();
-    const readings = data.weekly.dailyReadings;
 
-    // Table
     const table = document.getElementById("weeklyTable");
     table.innerHTML = `
       <tr><th>Type</th><th>Value</th></tr>
@@ -138,46 +79,17 @@ async function loadWeekly() {
       <tr><td>Period</td><td>${data.weekly.period}</td></tr>
       <tr><td>Height</td><td>${data.weekly.height}</td></tr>
     `;
-
-    // BMI Status
-    const statusDiv = document.getElementById("weeklyBmiStatus");
-    statusDiv.className = 'bmi-status ' + getBmiClass(data.weekly.bmi);
-    statusDiv.innerText = `Weekly BMI: ${data.weekly.bmi} (${getBmiText(data.weekly.bmi)})`;
-
-    // Chart
-    const ctx = document.getElementById("weeklyChartCanvas").getContext("2d");
-    if(weeklyChart) weeklyChart.destroy();
-    weeklyChart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],
-        datasets: [{
-          label: 'Weekly BMI',
-          data: readings,
-          borderColor: 'green',
-          backgroundColor: 'rgba(0,255,0,0.2)',
-          tension: 0.3
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false
-      }
-    });
-
   } catch(err) {
     console.error("Weekly load error:", err);
   }
 }
 
-/* ===== LOAD MONTHLY DATA ===== */
+/* ===== LOAD MONTHLY ===== */
 async function loadMonthly() {
   try {
     const res = await fetch(MONTHLY_URL);
     const data = await res.json();
-    const readings = data.monthly.weeklyReadings;
 
-    // Table
     const table = document.getElementById("monthlyTable");
     table.innerHTML = `
       <tr><th>Type</th><th>Value</th></tr>
@@ -186,50 +98,13 @@ async function loadMonthly() {
       <tr><td>Period</td><td>${data.monthly.period}</td></tr>
       <tr><td>Height</td><td>${data.monthly.height}</td></tr>
     `;
-
-    // BMI Status
-    const statusDiv = document.getElementById("monthlyBmiStatus");
-    statusDiv.className = 'bmi-status ' + getBmiClass(data.monthly.bmi);
-    statusDiv.innerText = `Monthly BMI: ${data.monthly.bmi} (${getBmiText(data.monthly.bmi)})`;
-
-    // Chart
-    const ctx = document.getElementById("monthlyChartCanvas").getContext("2d");
-    if(monthlyChart) monthlyChart.destroy();
-    monthlyChart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: ['Week 1','Week 2','Week 3','Week 4','Week 5'],
-        datasets: [{
-          label: 'Monthly BMI',
-          data: readings,
-          borderColor: 'blue',
-          backgroundColor: 'rgba(0,0,255,0.2)',
-          tension: 0.3
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false
-      }
-    });
-
   } catch(err) {
     console.error("Monthly load error:", err);
   }
 }
 
-/* ===== SWITCH VIEW ===== */
-function switchView() {
-  const view = document.getElementById("viewSelect").value;
-  document.getElementById("weeklyView").style.display = view === 'weekly' ? 'block' : 'none';
-  document.getElementById("monthlyView").style.display = view === 'monthly' ? 'block' : 'none';
-  localStorage.setItem("lastView", view);
-}
-
 /* ===== INIT ===== */
 window.onload = () => {
-  const lastView = localStorage.getItem("lastView") || 'weekly';
-  document.getElementById("viewSelect").value = lastView;
   switchView();
   loadWeekly();
   loadMonthly();
