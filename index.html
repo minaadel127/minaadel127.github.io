@@ -3,6 +3,7 @@
 <head>
   <title>Digital scale</title>
   <meta charset="utf-8">
+
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -10,21 +11,22 @@
       max-width: 900px;
       margin: auto;
     }
-    h1 {
-      text-align: center;
-    }
+    h1 { text-align: center; }
+
     select {
       display: block;
       margin: 10px auto;
       padding: 6px 12px;
       font-size: 16px;
     }
+
     iframe {
       width: 100%;
       border: 1px solid #ccc;
       border-radius: 8px;
       margin-top: 10px;
     }
+
     .bmi-status {
       font-weight: bold;
       padding: 10px;
@@ -34,111 +36,124 @@
       font-size: 18px;
       color: #fff;
     }
-    .bmi-severe, .bmi-obese3 {
-      background-color: #dc3545;
+
+    .bmi-severe, .bmi-obese3 { background-color: #dc3545; }
+    .bmi-moderate, .bmi-obese2 { background-color: #ffc107; color: #212529; }
+    .bmi-mild, .bmi-obese1 { background-color: #fd7e14; }
+    .bmi-normal { background-color: #28a745; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
     }
-    .bmi-moderate, .bmi-obese2 {
-      background-color: #ffc107;
-      color: #212529;
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: center;
     }
-    .bmi-mild, .bmi-obese1 {
-      background-color: #fd7e14;
-    }
-    .bmi-normal {
-      background-color: #28a745;
+
+    th {
+      background-color: #f2f2f2;
     }
   </style>
 </head>
+
 <body>
 
 <h1>Summary</h1>
 
 <label for="viewSelect">Choose timestamp:</label>
-
 <select id="viewSelect" onchange="switchView()">
   <option value="weekly">Weekly Summary</option>
   <option value="monthly">Monthly Summary</option>
 </select>
 
-<!-- Weekly Charts -->
+<!-- WEEKLY -->
 <div id="weeklyView">
   <iframe
-    src="https://docs.google.com/spreadsheets/d/e/2PACX-1vS4Vm_bppZA_s-__FYi0BzWuV_dSp40B2S6zOszAt0cZ5hmFwlruyKSOjSTBtAiHjVO2fSMtGGQWNF5/pubchart?oid=1099546107&format=interactive"
-    height="450"
-    frameborder="0">
+    src="https://docs.google.com/spreadsheets/d/e/2PACX-1vQxsj2q33Vyhi4LtmwtIBoH4Uss1HD8goW_58GWOjEGn3M5acQ98e6SsGJESuWZhfgnDtJd06Zbq_W1/pubchart?oid=439620191&format=interactive"
+    height="450">
   </iframe>
-  <iframe
-    src="https://docs.google.com/spreadsheets/d/e/2PACX-1vS4Vm_bppZA_s-__FYi0BzWuV_dSp40B2S6zOszAt0cZ5hmFwlruyKSOjSTBtAiHjVO2fSMtGGQWNF5/pubchart?oid=1975912906&format=interactive"
-    height="260"
-    frameborder="0">
-  </iframe>
+
   <div id="weeklyBmiStatus" class="bmi-status"></div>
+  <table id="weeklyTable"></table>
 </div>
 
-<!-- Monthly Charts -->
+<!-- MONTHLY -->
 <div id="monthlyView" style="display:none;">
   <iframe
-    src="https://docs.google.com/spreadsheets/d/e/2PACX-1vS4Vm_bppZA_s-__FYi0BzWuV_dSp40B2S6zOszAt0cZ5hmFwlruyKSOjSTBtAiHjVO2fSMtGGQWNF5/pubchart?oid=837033611&format=interactive"
-    height="450"
-    frameborder="0">
+    src="https://docs.google.com/spreadsheets/d/e/2PACX-1vQxsj2q33Vyhi4LtmwtIBoH4Uss1HD8goW_58GWOjEGn3M5acQ98e6SsGJESuWZhfgnDtJd06Zbq_W1/pubchart?oid=1627660190&format=interactive"
+    height="450">
   </iframe>
-  <iframe
-    src="https://docs.google.com/spreadsheets/d/e/2PACX-1vS4Vm_bppZA_s-__FYi0BzWuV_dSp40B2S6zOszAt0cZ5hmFwlruyKSOjSTBtAiHjVO2fSMtGGQWNF5/pubchart?oid=66511071&format=interactive"
-    height="260"
-    frameborder="0">
-  </iframe>
+
   <div id="monthlyBmiStatus" class="bmi-status"></div>
+  <table id="monthlyTable"></table>
 </div>
 
 <script>
-// Dropdown logic
+/* ===== CSV LINKS ===== */
+const WEEKLY_CSV  = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRwaDSwNrZh5TxEOvb3TCSi9dPcaQCl4ds3as5wnMOnoqPo8QDq5oTBh0YgDpq6I0zWWnX5xCWENQbS/pubhtml";
+const MONTHLY_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT0SDPTkTR9KhB8ZWNFcmP1a5SQtzu_C0Z767efdntIaHUf288FGvxUBXQEwZj6GfiqtrRqFcCFdPii/pub?output=csv";
+
+/* ===== VIEW SWITCH ===== */
 function switchView() {
-  var selected = document.getElementById("viewSelect").value;
-  document.getElementById("weeklyView").style.display = selected === "weekly" ? "block" : "none";
-  document.getElementById("monthlyView").style.display = selected === "monthly" ? "block" : "none";
+  const v = document.getElementById("viewSelect").value;
+  document.getElementById("weeklyView").style.display = v === "weekly" ? "block" : "none";
+  document.getElementById("monthlyView").style.display = v === "monthly" ? "block" : "none";
 }
 
-// Example BMI values; replace with dynamic fetching if needed
-const weeklyBMI = 49.14;
-const monthlyBMI = 22.5;
-
+/* ===== BMI LOGIC ===== */
 function getBmiClass(bmi) {
+  bmi = parseFloat(bmi);
   if (bmi < 16) return 'bmi-severe';
-  if (bmi >=16 && bmi < 17) return 'bmi-moderate';
-  if (bmi >=17 && bmi < 18.5) return 'bmi-mild';
-  if (bmi >=18.5 && bmi < 25) return 'bmi-normal';
-  if (bmi >=25 && bmi < 30) return 'bmi-moderate';
-  if (bmi >=30 && bmi < 35) return 'bmi-obese1';
-  if (bmi >=35 && bmi < 40) return 'bmi-obese2';
-  if (bmi >=40) return 'bmi-obese3';
-  return '';
+  if (bmi < 17) return 'bmi-moderate';
+  if (bmi < 18.5) return 'bmi-mild';
+  if (bmi < 25) return 'bmi-normal';
+  if (bmi < 30) return 'bmi-moderate';
+  if (bmi < 35) return 'bmi-obese1';
+  if (bmi < 40) return 'bmi-obese2';
+  return 'bmi-obese3';
 }
 
 function getBmiText(bmi) {
   if (bmi < 16) return 'Severe Thinness';
-  if (bmi >=16 && bmi < 17) return 'Moderate Thinness';
-  if (bmi >=17 && bmi < 18.5) return 'Mild Thinness';
-  if (bmi >=18.5 && bmi < 25) return 'Normal';
-  if (bmi >=25 && bmi < 30) return 'Overweight';
-  if (bmi >=30 && bmi < 35) return 'Obese Class I';
-  if (bmi >=35 && bmi < 40) return 'Obese Class II';
-  if (bmi >=40) return 'Obese Class III';
-  return '';
+  if (bmi < 17) return 'Moderate Thinness';
+  if (bmi < 18.5) return 'Mild Thinness';
+  if (bmi < 25) return 'Normal';
+  if (bmi < 30) return 'Overweight';
+  if (bmi < 35) return 'Obese Class I';
+  if (bmi < 40) return 'Obese Class II';
+  return 'Obese Class III';
 }
 
-// Update BMI display
-function updateBmiDisplay() {
-  const weeklyDiv = document.getElementById('weeklyBmiStatus');
-  weeklyDiv.className = 'bmi-status ' + getBmiClass(weeklyBMI);
-  weeklyDiv.innerText = `Weekly BMI: ${weeklyBMI.toFixed(1)} (${getBmiText(weeklyBMI)})`;
+/* ===== LOAD CSV ===== */
+function loadCSV(url, statusDivId, tableId, label) {
+  fetch(url)
+    .then(r => r.text())
+    .then(csv => {
+      const [bmi, weight, period, height] =
+        csv.trim().split("\n")[1].split(",");
 
-  const monthlyDiv = document.getElementById('monthlyBmiStatus');
-  monthlyDiv.className = 'bmi-status ' + getBmiClass(monthlyBMI);
-  monthlyDiv.innerText = `Monthly BMI: ${monthlyBMI.toFixed(1)} (${getBmiText(monthlyBMI)})`;
+      const statusDiv = document.getElementById(statusDivId);
+      statusDiv.className = 'bmi-status ' + getBmiClass(bmi);
+      statusDiv.innerText = `${label} BMI: ${bmi} (${getBmiText(bmi)})`;
+
+      document.getElementById(tableId).innerHTML = `
+        <tr>
+          <th>BMI</th><th>Weight</th><th>Max Period</th><th>Height</th>
+        </tr>
+        <tr>
+          <td>${bmi}</td><td>${weight}</td><td>${period}</td><td>${height}</td>
+        </tr>
+      `;
+    });
 }
 
-// Initialize on page load
-updateBmiDisplay();
+/* ===== INIT ===== */
+loadCSV(WEEKLY_CSV,  "weeklyBmiStatus",  "weeklyTable",  "Weekly");
+loadCSV(MONTHLY_CSV, "monthlyBmiStatus", "monthlyTable", "Monthly");
 </script>
 
 </body>
