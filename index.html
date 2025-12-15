@@ -67,7 +67,7 @@
 <h1>Summary</h1>
 
 <label for="viewSelect">Choose timestamp:</label>
-<select id="viewSelect" onchange="switchView()">
+<select id="viewSelect" onchange="switchView(true)">
   <option value="weekly">Weekly Summary</option>
   <option value="monthly">Monthly Summary</option>
 </select>
@@ -99,13 +99,6 @@
 const WEEKLY_CSV  = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRwaDSwNrZh5TxEOvb3TCSi9dPcaQCl4ds3as5wnMOnoqPo8QDq5oTBh0YgDpq6I0zWWnX5xCWENQbS/pub?output=csv";
 const MONTHLY_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT0SDPTkTR9KhB8ZWNFcmP1a5SQtzu_C0Z767efdntIaHUf288FGvxUBXQEwZj6GfiqtrRqFcCFdPii/pub?output=csv";
 
-/* ===== VIEW SWITCH ===== */
-function switchView() {
-  const v = document.getElementById("viewSelect").value;
-  document.getElementById("weeklyView").style.display = v === "weekly" ? "block" : "none";
-  document.getElementById("monthlyView").style.display = v === "monthly" ? "block" : "none";
-}
-
 /* ===== BMI LOGIC ===== */
 function getBmiClass(bmi) {
   bmi = parseFloat(bmi);
@@ -133,21 +126,17 @@ function getBmiText(bmi) {
 
 /* ===== LOAD CSV VERTICAL WITH CACHE-BUSTER ===== */
 function loadCSVVertical(url, statusDivId, tableId, label) {
-  // Add cache-buster
   const cacheBusterUrl = url + "&cb=" + new Date().getTime();
-
   fetch(cacheBusterUrl)
     .then(r => r.text())
     .then(csv => {
-      const values = csv.trim().split(","); // A1:D1
+      const values = csv.trim().split(",");
       const [bmi, weight, period, height] = values;
 
-      // Update BMI status
       const statusDiv = document.getElementById(statusDivId);
       statusDiv.className = 'bmi-status ' + getBmiClass(bmi);
       statusDiv.innerText = `${label} BMI: ${bmi} (${getBmiText(bmi)})`;
 
-      // Build vertical table
       const table = document.getElementById(tableId);
       table.innerHTML = `
         <tr><th>Type</th><th>Value</th></tr>
@@ -163,13 +152,28 @@ function loadCSVVertical(url, statusDivId, tableId, label) {
 /* ===== REFRESH IFRAMES WITH CACHE-BUSTER ===== */
 function refreshIframes() {
   document.querySelectorAll('iframe').forEach(frame => {
-    const src = frame.src.split('&cb=')[0]; // remove old cb if exists
+    const src = frame.src.split('&cb=')[0];
     frame.src = src + "&cb=" + new Date().getTime();
   });
 }
 
+/* ===== VIEW SWITCH WITH MEMORY ===== */
+function switchView(save = false) {
+  const v = document.getElementById("viewSelect").value;
+  document.getElementById("weeklyView").style.display = v === "weekly" ? "block" : "none";
+  document.getElementById("monthlyView").style.display = v === "monthly" ? "block" : "none";
+
+  if(save) localStorage.setItem("lastView", v);
+}
+
 /* ===== INIT ===== */
 window.onload = () => {
+  // Restore last view if available
+  const lastView = localStorage.getItem("lastView") || "weekly";
+  document.getElementById("viewSelect").value = lastView;
+  switchView();
+
+  // Load CSV and refresh charts
   loadCSVVertical(WEEKLY_CSV,  "weeklyBmiStatus",  "weeklyTable",  "Weekly");
   loadCSVVertical(MONTHLY_CSV, "monthlyBmiStatus", "monthlyTable", "Monthly");
   refreshIframes();
@@ -178,4 +182,3 @@ window.onload = () => {
 
 </body>
 </html>
-
