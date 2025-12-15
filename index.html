@@ -1,45 +1,154 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>CSV Test</title>
+  <title>Digital Scale Summary</title>
   <meta charset="utf-8">
   <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      max-width: 900px;
+      margin: auto;
+    }
+    h1 { text-align: center; }
+
+    select {
+      display: block;
+      margin: 10px auto;
+      padding: 6px 12px;
+      font-size: 16px;
+    }
+
+    iframe {
+      width: 100%;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      margin-top: 10px;
+    }
+
+    .bmi-status {
+      font-weight: bold;
+      padding: 10px;
+      border-radius: 5px;
+      margin-top: 15px;
+      text-align: center;
+      font-size: 18px;
+      color: #fff;
+    }
+
+    .bmi-severe, .bmi-obese3 { background-color: #dc3545; }
+    .bmi-moderate, .bmi-obese2 { background-color: #ffc107; color: #212529; }
+    .bmi-mild, .bmi-obese1 { background-color: #fd7e14; }
+    .bmi-normal { background-color: #28a745; }
+
     table {
       width: 50%;
+      margin: 20px auto;
       border-collapse: collapse;
-      margin: 50px auto;
-      text-align: center;
     }
+
     th, td {
       border: 1px solid #ccc;
       padding: 8px;
+      text-align: center;
     }
+
     th { background-color: #f2f2f2; }
   </style>
 </head>
 <body>
 
-<h2 style="text-align:center;">CSV Test Table</h2>
-<table id="csvTable"></table>
+<h1>Summary</h1>
+
+<label for="viewSelect">Choose timestamp:</label>
+<select id="viewSelect" onchange="switchView()">
+  <option value="weekly">Weekly Summary</option>
+  <option value="monthly">Monthly Summary</option>
+</select>
+
+<!-- WEEKLY -->
+<div id="weeklyView">
+  <iframe src="https://docs.google.com/spreadsheets/d/e/2PACX-1vQxsj2q33Vyhi4LtmwtIBoH4Uss1HD8goW_58GWOjEGn3M5acQ98e6SsGJESuWZhfgnDtJd06Zbq_W1/pubchart?oid=439620191&format=interactive" height="450"></iframe>
+  <div id="weeklyBmiStatus" class="bmi-status"></div>
+  <table id="weeklyTable"></table>
+</div>
+
+<!-- MONTHLY -->
+<div id="monthlyView" style="display:none;">
+  <iframe src="https://docs.google.com/spreadsheets/d/e/2PACX-1vQxsj2q33Vyhi4LtmwtIBoH4Uss1HD8goW_58GWOjEGn3M5acQ98e6SsGJESuWZhfgnDtJd06Zbq_W1/pubchart?oid=1627660190&format=interactive" height="450"></iframe>
+  <div id="monthlyBmiStatus" class="bmi-status"></div>
+  <table id="monthlyTable"></table>
+</div>
 
 <script>
-const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRwaDSwNrZh5TxEOvb3TCSi9dPcaQCl4ds3as5wnMOnoqPo8QDq5oTBh0YgDpq6I0zWWnX5xCWENQbS/pub?output=csv";
+/* ===== CSV LINKS ===== */
+const WEEKLY_CSV  = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRwaDSwNrZh5TxEOvb3TCSi9dPcaQCl4ds3as5wnMOnoqPo8QDq5oTBh0YgDpq6I0zWWnX5xCWENQbS/pub?output=csv";
+const MONTHLY_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT0SDPTkTR9KhB8ZWNFcmP1a5SQtzu_C0Z767efdntIaHUf288FGvxUBXQEwZj6GfiqtrRqFcCFdPii/pub?output=csv";
 
-fetch(CSV_URL)
-  .then(response => response.text())
-  .then(csv => {
-    const values = csv.trim().split(","); // just split A1:D1
-    let html = "<tr><th>BMI</th><th>Weight</th><th>Max Period</th><th>Height</th></tr>";
-    html += "<tr>" + values.map(v => `<td>${v}</td>`).join("") + "</tr>";
-    document.getElementById("csvTable").innerHTML = html;
-  })
-  .catch(err => {
-    document.getElementById("csvTable").innerHTML = `<tr><td colspan="4">Error loading CSV</td></tr>`;
-    console.error(err);
-  });
+/* ===== VIEW SWITCH ===== */
+function switchView() {
+  const v = document.getElementById("viewSelect").value;
+  document.getElementById("weeklyView").style.display = v === "weekly" ? "block" : "none";
+  document.getElementById("monthlyView").style.display = v === "monthly" ? "block" : "none";
+}
+
+/* ===== BMI LOGIC ===== */
+function getBmiClass(bmi) {
+  bmi = parseFloat(bmi);
+  if (bmi < 16) return 'bmi-severe';
+  if (bmi < 17) return 'bmi-moderate';
+  if (bmi < 18.5) return 'bmi-mild';
+  if (bmi < 25) return 'bmi-normal';
+  if (bmi < 30) return 'bmi-moderate';
+  if (bmi < 35) return 'bmi-obese1';
+  if (bmi < 40) return 'bmi-obese2';
+  return 'bmi-obese3';
+}
+
+function getBmiText(bmi) {
+  bmi = parseFloat(bmi);
+  if (bmi < 16) return 'Severe Thinness';
+  if (bmi < 17) return 'Moderate Thinness';
+  if (bmi < 18.5) return 'Mild Thinness';
+  if (bmi < 25) return 'Normal';
+  if (bmi < 30) return 'Overweight';
+  if (bmi < 35) return 'Obese Class I';
+  if (bmi < 40) return 'Obese Class II';
+  return 'Obese Class III';
+}
+
+/* ===== LOAD CSV VERTICAL ===== */
+function loadCSVVertical(url, statusDivId, tableId, label) {
+  fetch(url)
+    .then(r => r.text())
+    .then(csv => {
+      const values = csv.trim().split(","); // first row A1:D1
+      const [bmi, weight, period, height] = values;
+
+      // Update BMI status
+      const statusDiv = document.getElementById(statusDivId);
+      statusDiv.className = 'bmi-status ' + getBmiClass(bmi);
+      statusDiv.innerText = `${label} BMI: ${bmi} (${getBmiText(bmi)})`;
+
+      // Build vertical table
+      const table = document.getElementById(tableId);
+      table.innerHTML = `
+        <tr><th>Type</th><th>Value</th></tr>
+        <tr><td>BMI</td><td>${bmi}</td></tr>
+        <tr><td>Weight</td><td>${weight}</td></tr>
+        <tr><td>Max Period</td><td>${period}</td></tr>
+        <tr><td>Height</td><td>${height}</td></tr>
+      `;
+    })
+    .catch(err => {
+      console.error(err);
+    });
+}
+
+/* ===== INIT ===== */
+loadCSVVertical(WEEKLY_CSV,  "weeklyBmiStatus",  "weeklyTable",  "Weekly");
+loadCSVVertical(MONTHLY_CSV, "monthlyBmiStatus", "monthlyTable", "Monthly");
 </script>
 
 </body>
 </html>
-
-
