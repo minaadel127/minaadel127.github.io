@@ -28,17 +28,9 @@ const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRwaDSwNrZh5TxE
 fetch(CSV_URL)
   .then(response => response.text())
   .then(csv => {
-    const lines = csv.trim().split("\n");
-    let html = "";
-    
-    // Header row
-    const headers = lines[0].split(",");
-    html += "<tr>" + headers.map(h => `<th>${h}</th>`).join("") + "</tr>";
-    
-    // First data row
-    const values = lines[1].split(",");
+    const values = csv.trim().split(","); // just split A1:D1
+    let html = "<tr><th>BMI</th><th>Weight</th><th>Max Period</th><th>Height</th></tr>";
     html += "<tr>" + values.map(v => `<td>${v}</td>`).join("") + "</tr>";
-
     document.getElementById("csvTable").innerHTML = html;
   })
   .catch(err => {
@@ -49,4 +41,5 @@ fetch(CSV_URL)
 
 </body>
 </html>
+
 
