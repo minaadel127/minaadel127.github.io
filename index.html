@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html>
 <head>
   <title>Digital Scale Summary</title>
@@ -56,23 +56,19 @@
       height: 350px !important;
     }
 
-    /* Adjustment controls */
-    #adjustContainer {
-      margin: 20px auto;
+    .height-control {
       display: flex;
-      align-items: center;
       justify-content: center;
+      align-items: center;
+      margin: 20px;
       gap: 10px;
-    }
-    #adjustContainer button {
-      font-size: 20px;
-      width: 50px;
-      height: 40px;
-    }
-    #adjustContainer input {
-      width: 100px;
-      text-align: center;
       font-size: 18px;
+    }
+
+    .height-control button {
+      padding: 6px 12px;
+      font-size: 18px;
+      cursor: pointer;
     }
   </style>
 </head>
@@ -80,20 +76,18 @@
 
 <h1>Digital Scale Summary</h1>
 
-<!-- +- Weight Adjustment -->
-<div id="adjustContainer">
-  <button id="minusBtn">-</button>
-  <input type="number" id="weightInput" value="0.00" step="0.01">
-  <button id="plusBtn">+</button>
-  <span>kg</span>
-</div>
-<p>Adjusted Weight: <span id="adjustedWeight">0.00</span> kg</p>
-
 <label for="viewSelect">Choose timestamp:</label>
 <select id="viewSelect" onchange="switchView(true)">
   <option value="weekly">Weekly Summary</option>
   <option value="monthly">Monthly Summary</option>
 </select>
+
+<!-- HEIGHT CONTROLS -->
+<div class="height-control">
+  <button onclick="changeHeight(-5)">-</button>
+  <span>Height: <span id="heightDisplay">0</span> cm</span>
+  <button onclick="changeHeight(5)">+</button>
+</div>
 
 <!-- WEEKLY -->
 <div id="weeklyView">
@@ -111,9 +105,8 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-/* ===== WEB APP URLs ===== */
-const WEEKLY_URL = "https://script.google.com/macros/s/AKfycbyUUVHPZtGtr4zQ_PLEySobTJo0vdCyavu-5XToUMaahbb3FG4e_14Oevymvpe_klCeNA/exec";
-const MONTHLY_URL = "https://script.google.com/macros/s/AKfycbyzJblckaSu8q79Q-mx0cbMh2VWIRv7J6Ep5Y-GPtdiVXF6fqEDQKQ5xvXYmDji12DbYg/exec";
+/* ===== DEPLOYMENT URL OF doPost ===== */
+const UPLOAD_URL = "https://script.google.com/macros/s/AKfycbz7JZZ1ITWCGXrxhSCLOkD0n5j3J_ZXpJ_yyFgUKNCkN4DXSFTb3t_Cz7Kh0uS_TmuD9A/exec";
 
 /* ===== BMI LOGIC ===== */
 function getBmiClass(bmi) {
@@ -142,10 +135,12 @@ function getBmiText(bmi) {
 
 /* ===== LOAD DATA & BUILD TABLE ===== */
 function buildTable(data, tableId, statusDivId, label, chartId, valuesKey) {
+  // Update BMI
   const statusDiv = document.getElementById(statusDivId);
   statusDiv.className = 'bmi-status ' + getBmiClass(data.bmi);
   statusDiv.innerText = `${label} BMI: ${data.bmi} (${getBmiText(data.bmi)})`;
 
+  // Build vertical table
   const table = document.getElementById(tableId);
   table.innerHTML = `
     <tr><th>Type</th><th>Value</th></tr>
@@ -155,6 +150,7 @@ function buildTable(data, tableId, statusDivId, label, chartId, valuesKey) {
     <tr><td>Height</td><td>${data.height}</td></tr>
   `;
 
+  // Build line chart
   const ctx = document.getElementById(chartId).getContext('2d');
   new Chart(ctx, {
     type: 'line',
@@ -173,7 +169,11 @@ function buildTable(data, tableId, statusDivId, label, chartId, valuesKey) {
     options: {
       responsive: false,
       scales: {
-        y: { min: 0, max: 80, ticks: { stepSize: 20 } }
+        y: {
+          min: 0,
+          max: 80,
+          ticks: { stepSize: 20 }
+        }
       }
     }
   });
@@ -184,31 +184,21 @@ function switchView(save = false) {
   const v = document.getElementById("viewSelect").value;
   document.getElementById("weeklyView").style.display = v === "weekly" ? "block" : "none";
   document.getElementById("monthlyView").style.display = v === "monthly" ? "block" : "none";
+
   if(save) localStorage.setItem("lastView", v);
 }
 
-/* ===== WEIGHT ADJUSTMENT ===== */
-const weightInput = document.getElementById("weightInput");
-const adjustedDisplay = document.getElementById("adjustedWeight");
-const plusBtn = document.getElementById("plusBtn");
-const minusBtn = document.getElementById("minusBtn");
-const step = 0.01;
+/* ===== HEIGHT CONTROL ===== */
+let height = parseInt(localStorage.getItem("userHeight") || "0");
+document.getElementById("heightDisplay").innerText = height;
 
-function updateAdjusted() {
-  adjustedDisplay.innerText = parseFloat(weightInput.value).toFixed(2);
+function changeHeight(delta) {
+  height += delta;
+  if (height < 0) height = 0;
+  if (height > 50) height = 50;
+  document.getElementById("heightDisplay").innerText = height;
+  localStorage.setItem("userHeight", height);
 }
-
-plusBtn.addEventListener("click", () => {
-  weightInput.value = (parseFloat(weightInput.value) + step).toFixed(2);
-  updateAdjusted();
-});
-
-minusBtn.addEventListener("click", () => {
-  weightInput.value = (parseFloat(weightInput.value) - step).toFixed(2);
-  updateAdjusted();
-});
-
-weightInput.addEventListener("input", updateAdjusted);
 
 /* ===== INIT ===== */
 window.onload = () => {
@@ -216,21 +206,16 @@ window.onload = () => {
   document.getElementById("viewSelect").value = lastView;
   switchView();
 
+  // Fetch weekly data
   fetch(WEEKLY_URL)
     .then(r => r.json())
-    .then(data => {
-      buildTable(data, 'weeklyTable', 'weeklyBmiStatus', 'Weekly', 'weeklyChart', 'weeklyValues');
-      // initialize weight input
-      weightInput.value = data.weight || 0;
-      updateAdjusted();
-    })
+    .then(data => buildTable(data, 'weeklyTable', 'weeklyBmiStatus', 'Weekly', 'weeklyChart', 'weeklyValues'))
     .catch(err => console.error('Weekly fetch error:', err));
 
+  // Fetch monthly data
   fetch(MONTHLY_URL)
     .then(r => r.json())
-    .then(data => {
-      buildTable(data, 'monthlyTable', 'monthlyBmiStatus', 'Monthly', 'monthlyChart', 'monthlyValues');
-    })
+    .then(data => buildTable(data, 'monthlyTable', 'monthlyBmiStatus', 'Monthly', 'monthlyChart', 'monthlyValues'))
     .catch(err => console.error('Monthly fetch error:', err));
 };
 </script>
