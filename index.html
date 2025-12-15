@@ -1,3 +1,51 @@
-const WEEKLY_CSV  = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRwaDSwNrZh5TxEOvb3TCSi9dPcaQCl4ds3as5wnMOnoqPo8QDq5oTBh0YgDpq6I0zWWnX5xCWENQbS/pub?output=csv";
-const MONTHLY_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT0SDPTkTR9KhB8ZWNFcmP1a5SQtzu_C0Z767efdntIaHUf288FGvxUBXQEwZj6GfiqtrRqFcCFdPii/pub?output=csv";
+<!DOCTYPE html>
+<html>
+<head>
+  <title>CSV Test</title>
+  <meta charset="utf-8">
+  <style>
+    table {
+      width: 50%;
+      border-collapse: collapse;
+      margin: 50px auto;
+      text-align: center;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+    }
+    th { background-color: #f2f2f2; }
+  </style>
+</head>
+<body>
 
+<h2 style="text-align:center;">CSV Test Table</h2>
+<table id="csvTable"></table>
+
+<script>
+const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRwaDSwNrZh5TxEOvb3TCSi9dPcaQCl4ds3as5wnMOnoqPo8QDq5oTBh0YgDpq6I0zWWnX5xCWENQbS/pub?output=csv"; // <-- replace this
+
+fetch(CSV_URL)
+  .then(response => response.text())
+  .then(csv => {
+    const lines = csv.trim().split("\n");
+    let html = "";
+    
+    // Create header row
+    const headers = lines[0].split(",");
+    html += "<tr>" + headers.map(h => `<th>${h}</th>`).join("") + "</tr>";
+    
+    // Create first data row
+    const values = lines[1].split(",");
+    html += "<tr>" + values.map(v => `<td>${v}</td>`).join("") + "</tr>";
+
+    document.getElementById("csvTable").innerHTML = html;
+  })
+  .catch(err => {
+    document.getElementById("csvTable").innerHTML = `<tr><td colspan="4">Error loading CSV</td></tr>`;
+    console.error(err);
+  });
+</script>
+
+</body>
+</html>
