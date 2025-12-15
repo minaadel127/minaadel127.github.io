@@ -137,7 +137,7 @@ function buildTable(data, tableId, statusDivId, label, chartId, valuesKey) {
       labels: data[valuesKey].map((_, i) => `Point ${i+1}`),
       datasets: [{
         label: label + ' Trend',
-        data: data[valuesKey].map(v => parseFloat(v) || 0),
+        data: data[valuesKey].map(v => Math.max(parseFloat(v) || 0, 0)), // enforce min 0
         borderColor: '#007bff',
         backgroundColor: 'rgba(0,123,255,0.1)',
         tension: 0.3,
@@ -149,7 +149,9 @@ function buildTable(data, tableId, statusDivId, label, chartId, valuesKey) {
       responsive: false,
       scales: {
         y: {
-          beginAtZero: true
+          min: 0,
+          max: 80,
+          ticks: { stepSize: 20 }
         }
       }
     }
