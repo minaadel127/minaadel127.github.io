@@ -54,9 +54,9 @@
 </div>
 
 <script>
-/* ===== REPLACE THESE WITH YOUR WEB APP DEPLOYED URLs ===== */
+/* ===== REPLACE THESE WITH YOUR WEB APP URLs ===== */
 const WEEKLY_URL  = "https://script.google.com/macros/s/AKfycbxNXvy3xP98H4GoOsh_UW2YBceCWz9_sVY_fqQZME-n1eI_lBiOC0AzB4JtI6p_kUCkEw/exec";
-const MONTHLY_URL = "https://script.google.com/macros/s/AKfycbxj9kHBXyCopYVvdn6HVOutus2-IEx_dg5jE8APov65bN5Y0_k5ew72B942wOITBiAGPg/exec";
+const MONTHLY_URL = "https://script.google.com/macros/s/AKfycbxahFOzwfP8QKsLcqWEsNq3FiD_rQthjw8x4JXNwU3zhwiUT1KYVomM9A2__Yb3hFwOCQ/exec";
 
 /* ===== SWITCH VIEW ===== */
 function switchView() {
@@ -65,38 +65,40 @@ function switchView() {
   document.getElementById("monthlyView").style.display = view === 'monthly' ? 'block' : 'none';
 }
 
-/* ===== LOAD WEEKLY ===== */
+/* ===== FETCH AND DISPLAY WEEKLY ===== */
 async function loadWeekly() {
   try {
     const res = await fetch(WEEKLY_URL);
     const data = await res.json();
+    console.log("Weekly data:", data); // DEBUG: see what comes back
 
     const table = document.getElementById("weeklyTable");
     table.innerHTML = `
       <tr><th>Type</th><th>Value</th></tr>
-      <tr><td>BMI</td><td>${data.weekly.bmi}</td></tr>
-      <tr><td>Weight</td><td>${data.weekly.weight}</td></tr>
-      <tr><td>Period</td><td>${data.weekly.period}</td></tr>
-      <tr><td>Height</td><td>${data.weekly.height}</td></tr>
+      <tr><td>BMI</td><td>${data.bmi}</td></tr>
+      <tr><td>Weight</td><td>${data.weight}</td></tr>
+      <tr><td>Period</td><td>${data.period}</td></tr>
+      <tr><td>Height</td><td>${data.height}</td></tr>
     `;
   } catch(err) {
     console.error("Weekly load error:", err);
   }
 }
 
-/* ===== LOAD MONTHLY ===== */
+/* ===== FETCH AND DISPLAY MONTHLY ===== */
 async function loadMonthly() {
   try {
     const res = await fetch(MONTHLY_URL);
     const data = await res.json();
+    console.log("Monthly data:", data); // DEBUG: see what comes back
 
     const table = document.getElementById("monthlyTable");
     table.innerHTML = `
       <tr><th>Type</th><th>Value</th></tr>
-      <tr><td>BMI</td><td>${data.monthly.bmi}</td></tr>
-      <tr><td>Weight</td><td>${data.monthly.weight}</td></tr>
-      <tr><td>Period</td><td>${data.monthly.period}</td></tr>
-      <tr><td>Height</td><td>${data.monthly.height}</td></tr>
+      <tr><td>BMI</td><td>${data.bmi}</td></tr>
+      <tr><td>Weight</td><td>${data.weight}</td></tr>
+      <tr><td>Period</td><td>${data.period}</td></tr>
+      <tr><td>Height</td><td>${data.height}</td></tr>
     `;
   } catch(err) {
     console.error("Monthly load error:", err);
