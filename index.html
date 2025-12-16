@@ -1,99 +1,182 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Digital Scale Height Manager</title>
+  <title>Digital Scale Summary</title>
   <meta charset="utf-8">
   <style>
     body {
       font-family: Arial, sans-serif;
-      max-width: 600px;
+      padding: 20px;
+      max-width: 900px;
       margin: auto;
       text-align: center;
-      padding: 20px;
     }
-    h1 { margin-bottom: 30px; }
-    .height-display {
-      font-size: 36px;
-      margin: 20px 0;
+    h1 { text-align: center; }
+
+    select {
+      display: block;
+      margin: 10px auto;
+      padding: 6px 12px;
+      font-size: 16px;
     }
-    button {
-      font-size: 24px;
-      width: 60px;
-      height: 60px;
-      margin: 10px;
-    }
-    #status {
-      margin-top: 20px;
+
+    .bmi-status {
       font-weight: bold;
+      padding: 10px;
+      border-radius: 5px;
+      margin: 15px auto;
+      font-size: 18px;
+      color: #fff;
+      width: 300px;
+    }
+
+    .bmi-severe, .bmi-obese3 { background-color: #dc3545; }
+    .bmi-moderate, .bmi-obese2 { background-color: #ffc107; color: #212529; }
+    .bmi-mild, .bmi-obese1 { background-color: #fd7e14; }
+    .bmi-normal { background-color: #28a745; }
+
+    table {
+      width: 400px;
+      margin: 20px auto;
+      border-collapse: collapse;
+      text-align: center;
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+    }
+
+    th { background-color: #f2f2f2; }
+
+    canvas {
+      display: block;
+      margin: 20px auto;
+      width: 600px !important;
+      height: 350px !important;
     }
   </style>
 </head>
 <body>
 
-<h1>Set Your Height</h1>
+<h1>Digital Scale Summary</h1>
 
-<div class="height-display" id="heightDisplay">0 cm</div>
+<label for="viewSelect">Choose timestamp:</label>
+<select id="viewSelect" onchange="switchView(true)">
+  <option value="weekly">Weekly Summary</option>
+  <option value="monthly">Monthly Summary</option>
+</select>
 
-<button onclick="changeHeight(-5)">-</button>
-<button onclick="changeHeight(5)">+</button>
+<!-- WEEKLY -->
+<div id="weeklyView">
+  <div id="weeklyBmiStatus" class="bmi-status"></div>
+  <table id="weeklyTable"></table>
+  <canvas id="weeklyChart"></canvas>
+</div>
 
-<div id="status"></div>
+<!-- MONTHLY -->
+<div id="monthlyView" style="display:none;">
+  <div id="monthlyBmiStatus" class="bmi-status"></div>
+  <table id="monthlyTable"></table>
+  <canvas id="monthlyChart"></canvas>
+</div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-  // ===== CONFIG =====
-  const HEIGHT_MIN = 0;
-  const HEIGHT_MAX = 50;
-  const HEIGHT_STEP = 5;
+/* ===== WEB APP URLs ===== */
+const WEEKLY_URL = "https://script.google.com/macros/s/AKfycbx4TCYyQ_rOoRz-tzVahC96IiO7_4h0J2ykEFG-EuQ4J2kVBXC4OcyO35RgMXan-1gK6w/exec";
+const MONTHLY_URL = "https://script.google.com/macros/s/AKfycbwSftxmAamo-q8fS6i3W3Eu2hffJxaSUX6qx2T61Xnr3QJIFYHAvk8g8oXIxKPBHgqlXg/exec";
 
-  // ===== LOCAL STORAGE =====
-  let currentHeight = parseInt(localStorage.getItem("height") || 0);
+/* ===== BMI LOGIC ===== */
+function getBmiClass(bmi) {
+  bmi = parseFloat(bmi);
+  if (bmi < 16) return 'bmi-severe';
+  if (bmi < 17) return 'bmi-moderate';
+  if (bmi < 18.5) return 'bmi-mild';
+  if (bmi < 25) return 'bmi-normal';
+  if (bmi < 30) return 'bmi-moderate';
+  if (bmi < 35) return 'bmi-obese1';
+  if (bmi < 40) return 'bmi-obese2';
+  return 'bmi-obese3';
+}
 
-  const heightDisplay = document.getElementById("heightDisplay");
-  const statusDiv = document.getElementById("status");
+function getBmiText(bmi) {
+  bmi = parseFloat(bmi);
+  if (bmi < 16) return 'Severe Thinness';
+  if (bmi < 17) return 'Moderate Thinness';
+  if (bmi < 18.5) return 'Mild Thinness';
+  if (bmi < 25) return 'Normal';
+  if (bmi < 30) return 'Overweight';
+  if (bmi < 35) return 'Obese Class I';
+  if (bmi < 40) return 'Obese Class II';
+  return 'Obese Class III';
+}
 
-  function updateDisplay() {
-    heightDisplay.innerText = currentHeight + " cm";
-    localStorage.setItem("height", currentHeight);
-  }
+/* ===== LOAD DATA & BUILD TABLE ===== */
+function buildTable(data, tableId, statusDivId, label, chartId, valuesKey) {
+  const statusDiv = document.getElementById(statusDivId);
+  statusDiv.className = 'bmi-status ' + getBmiClass(data.bmi);
+  statusDiv.innerText = `${label} BMI: ${data.bmi} (${getBmiText(data.bmi)})`;
 
-  function changeHeight(delta) {
-    currentHeight += delta;
-    if(currentHeight < HEIGHT_MIN) currentHeight = HEIGHT_MIN;
-    if(currentHeight > HEIGHT_MAX) currentHeight = HEIGHT_MAX;
-    updateDisplay();
-  }
+  const table = document.getElementById(tableId);
+  table.innerHTML = `
+    <tr><th>Type</th><th>Value</th></tr>
+    <tr><td>BMI</td><td>${data.bmi}</td></tr>
+    <tr><td>Weight</td><td>${data.weight}</td></tr>
+    <tr><td>Time Period</td><td>${data.period}</td></tr>
+    <tr><td>Height</td><td>${data.height}</td></tr>
+  `;
 
-  // ===== SEND HEIGHT TO SHEET =====
-  function sendHeightToSheet() {
-    // Replace this with your height script deployment URL
-    const HEIGHT_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyXp8bOcoxOuaeXDVXRvfKFFeiuCvXyxsveXDo0aalrToG6Arbb8QXP8HJF-jjetPnlzQ/exec";
-
-    fetch(HEIGHT_SCRIPT_URL + "?height=" + currentHeight)
-      .then(response => response.json())
-      .then(data => {
-        if(data.result === "success"){
-          statusDiv.innerText = "Height saved successfully.";
-          statusDiv.style.color = "green";
-        } else {
-          statusDiv.innerText = "Error saving height: " + data.message;
-          statusDiv.style.color = "red";
+  const ctx = document.getElementById(chartId).getContext('2d');
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: data[valuesKey].map((_, i) => `Point ${i+1}`),
+      datasets: [{
+        label: label + ' Trend',
+        data: data[valuesKey].map(v => Math.max(parseFloat(v) || 0, 0)),
+        borderColor: '#007bff',
+        backgroundColor: 'rgba(0,123,255,0.1)',
+        tension: 0.3,
+        fill: true,
+        pointRadius: 5
+      }]
+    },
+    options: {
+      responsive: false,
+      scales: {
+        y: {
+          min: 0,
+          max: 80,
+          ticks: { stepSize: 20 }
         }
-      })
-      .catch(err => {
-        statusDiv.innerText = "Error connecting to server.";
-        statusDiv.style.color = "red";
-        console.error(err);
-      });
-  }
+      }
+    }
+  });
+}
 
-  // ===== INIT =====
-  window.onload = () => {
-    updateDisplay();
+/* ===== VIEW SWITCH ===== */
+function switchView(save = false) {
+  const v = document.getElementById("viewSelect").value;
+  document.getElementById("weeklyView").style.display = v === "weekly" ? "block" : "none";
+  document.getElementById("monthlyView").style.display = v === "monthly" ? "block" : "none";
+  if (save) localStorage.setItem("lastView", v);
+}
 
-    // Optionally, automatically send height every few seconds
-    // or when a new weight reading is uploaded from the scale
-    // Example: sendHeightToSheet();
-  };
+/* ===== INIT ===== */
+window.onload = () => {
+  const lastView = localStorage.getItem("lastView") || "weekly";
+  document.getElementById("viewSelect").value = lastView;
+  switchView();
+
+  fetch(WEEKLY_URL)
+    .then(r => r.json())
+    .then(data => buildTable(data, 'weeklyTable', 'weeklyBmiStatus', 'Weekly', 'weeklyChart', 'weeklyValues'));
+
+  fetch(MONTHLY_URL)
+    .then(r => r.json())
+    .then(data => buildTable(data, 'monthlyTable', 'monthlyBmiStatus', 'Monthly', 'monthlyChart', 'monthlyValues'));
+};
 </script>
 
 </body>
