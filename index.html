@@ -167,7 +167,7 @@ function buildTable(data, tableId, statusDivId, label, chartId, valuesKey) {
     data: {
       labels: data[valuesKey].map((_, i) => `Point ${i + 1}`),
       datasets: [{
-        label: label + ' Trend',
+        label: label + ' BMI Trend',
         data: data[valuesKey].map(v => Math.max(parseFloat(v) || 0, 0)),
         borderColor: '#007bff',
         backgroundColor: 'rgba(0,123,255,0.1)',
