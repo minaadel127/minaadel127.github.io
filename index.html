@@ -161,11 +161,16 @@ function buildTable(data, tableId, statusDivId, label, chartId, valuesKey) {
     <tr><td>Height</td><td>${data.height}</td></tr>
   `;
 
+  const labels = label === "Weekly"
+    ? ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]
+    : ["Week 1","Week 2","Week 3","Week 4","Week 5"];
+
   const ctx = document.getElementById(chartId).getContext('2d');
+
   new Chart(ctx, {
     type: 'line',
     data: {
-      labels: data[valuesKey].map((_, i) => `Point ${i + 1}`),
+      labels: labels,
       datasets: [{
         label: label + ' BMI Trend',
         data: data[valuesKey].map(v => Math.max(parseFloat(v) || 0, 0)),
